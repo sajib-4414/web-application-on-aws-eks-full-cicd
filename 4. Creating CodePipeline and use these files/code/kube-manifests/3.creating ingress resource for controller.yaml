@@ -1,0 +1,84 @@
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: ingress-resource
+#   annotations:
+#     alb.ingress.kubernetes.io/scheme: internet-facing
+#     alb.ingress.kubernetes.io/target-type: ip
+# spec:
+#   ingressClassName: alb
+#   rules:
+#     # - host: firstapp.arefin.click
+#     #   http:
+#     #     paths:
+#     #       - path: /
+#     #         pathType: Prefix
+#     #         backend:
+#     #           service:
+#     #             name: nodeport-service-for-web-application-container-1
+#     #             port:
+#     #               number: 80
+#     - host: secondapp.arefin.click
+#       http:
+        # paths:
+        #   - path: /
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: nonodeport-service-for-web-application-container-2
+#                 port:
+#                   number: 80
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-2048
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    # this line will create records in Route53->hosted zone for the domain with alias to ingress
+    # load balancer.
+    # it will create 3 records for each domain we are mentioning 
+    external-dns.alpha.kubernetes.io/hostname: secondapp.arefin.click, firstapp.arefin.click
+    # these 2 lines are for SSL configuration
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}, {"HTTP":80}]'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:502494554616:certificate/291e55e1-e45b-4059-afc4-8a11917e3620
+    # for SSL redirect
+    # SSL Redirect Setting
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+spec:
+  ingressClassName: alb
+  rules:
+    - host: secondapp.arefin.click
+      http:
+        paths:  
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: service-2048
+                port:
+                  number: 80
+          - path: /*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: default-service
+                port:
+                  number: 80
+    - host: firstapp.arefin.click
+      http:
+        paths: 
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: service-2048-1
+              port:
+                number: 80
+        - path: /*
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: default-service
+              port:
+                number: 80
